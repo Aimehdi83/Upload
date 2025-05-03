@@ -66,8 +66,8 @@ async def receive_caption(update: Update, context: ContextTypes.DEFAULT_TYPE):
     link = f"https://t.me/{bot_username}?start={key}"
 
     full_caption = (
-        f"{caption}\n\n"
-        f"[مشاهده]({link})\n\n"
+        f"{caption}\\n\\n"
+        f"[مشاهده]({link})\\n\\n"
         f"🔥@hottof | تُفِ داغ"
     )
 
