@@ -9,7 +9,7 @@ from utils import gen_code
 app = Flask(__name__)
 URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 users = {}
-sent_codes = {}  # برای ذخیره فایل‌هایی که قبلاً ارسال شده‌اند
+sent_codes = {}
 pinging = True
 
 def send(method, data):
@@ -54,37 +54,6 @@ def index():
 def webhook():
     update = request.get_json()
 
-    if "message" in update and "text" in update["message"] and update["message"]["text"].startswith("/start "):
-        msg = update["message"]
-        cid = msg["chat"]["id"]
-        uid = msg["from"]["id"]
-        code = msg["text"].split("/start ")[1]
-
-        not_joined = check_all_channels(uid)
-        if not_joined:
-            users[uid] = {"pending_code": code}  # ذخیره کد برای ارسال پس از تأیید
-            buttons = [[{"text": f"عضویت در @{ch}", "url": f"https://t.me/{ch}"}] for ch in not_joined]
-            buttons.append([{"text": "عضو شدم ✅", "callback_data": "joined"}])
-            send("sendMessage", {
-                "chat_id": cid,
-                "text": "برای دریافت فایل، ابتدا در کانال‌های زیر عضو شو:",
-                "reply_markup": {"inline_keyboard": buttons}
-            })
-            return "ok"
-
-        if sent_codes.get((uid, code)):
-            return "ok"  # فایل قبلاً ارسال شده
-
-        file_id = get_file(code)
-        if file_id:
-            sent_codes[(uid, code)] = True
-            sent = send("sendVideo", {"chat_id": cid, "video": file_id})
-            if "result" in sent:
-                mid = sent["result"]["message_id"]
-                send("sendMessage", {"chat_id": cid, "text": "⚠️این محتوا تا ۲۰ ثانیه دیگر پاک میشود "})
-                threading.Timer(20, delete, args=(cid, mid)).start()
-        return "ok"
-
     if "message" in update:
         msg = update["message"]
         uid = msg["from"]["id"]
@@ -93,9 +62,39 @@ def webhook():
         text = msg.get("text", "")
         state = users.get(uid, {})
 
+        # شروع با کد
+        if text.startswith("/start "):
+            code = text.split("/start ")[1]
+            not_joined = check_all_channels(uid)
+            if not_joined:
+                users[uid] = {"pending_code": code}
+                buttons = [[{"text": f"عضویت در @{ch}", "url": f"https://t.me/{ch}"}] for ch in not_joined]
+                buttons.append([{"text": "عضو شدم ✅", "callback_data": "joined"}])
+                send("sendMessage", {
+                    "chat_id": cid,
+                    "text": "برای دریافت فایل، ابتدا در کانال‌های زیر عضو شو:",
+                    "reply_markup": {"inline_keyboard": buttons}
+                })
+                return "ok"
+
+            if sent_codes.get((uid, code)):
+                return "ok"
+
+            file_id = get_file(code)
+            if file_id:
+                sent_codes[(uid, code)] = True
+                sent = send("sendVideo", {"chat_id": cid, "video": file_id})
+                if "result" in sent:
+                    mid = sent["result"]["message_id"]
+                    send("sendMessage", {"chat_id": cid, "text": "⚠️این محتوا تا ۲۰ ثانیه دیگر پاک میشود "})
+                    threading.Timer(20, delete, args=(cid, mid)).start()
+            return "ok"
+
+        # شروع بدون کد
         if text == "/start":
             send("sendMessage", {"chat_id": cid, "text": "سلام خوش اومدی عزیزم واسه دریافت فایل مد نظرت از کانال @hottof روی دکمه مشاهده بزن ♥️"})
 
+        # پنل مدیریت
         elif text == "/panel" and uid in ADMIN_IDS:
             kb = {
                 "keyboard": [
@@ -155,6 +154,7 @@ def webhook():
             users.pop(uid)
             send("sendMessage", {"chat_id": cid, "text": "کانال با موفقیت حذف شد ✅"})
 
+    # بررسی دکمه «عضو شدم»
     if "callback_query" in update:
         query = update["callback_query"]
         uid = query["from"]["id"]
