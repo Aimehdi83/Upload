@@ -12,9 +12,15 @@ users = {}
 pinging = True
 
 def send(method, data):
-    response = requests.post(f"{URL}/{method}", json=data).json()
-    print(f"Response from {method}: {response}")
-    return response
+    try:
+        response = requests.post(f"{URL}/{method}", json=data)
+        if response.status_code != 200:
+            print(f"Error in sending {method}: {response.status_code}, {response.text}")
+            return None
+        return response.json()
+    except Exception as e:
+        print(f"Error in sending {method}: {e}")
+        return None
 
 def delete(chat_id, message_id):
     send("deleteMessage", {"chat_id": chat_id, "message_id": message_id})
@@ -28,11 +34,11 @@ def ping():
         time.sleep(PING_INTERVAL)
 
 def is_user_member(user_id, channel):
-    resp = requests.get(f"{URL}/getChatMember?chat_id=@{channel}&user_id={user_id}").json()
-    print(f"Checking membership for {user_id} in @{channel}: {resp}")
     try:
+        resp = requests.get(f"{URL}/getChatMember?chat_id=@{channel}&user_id={user_id}").json()
         return resp["result"]["status"] in ["member", "administrator", "creator"]
-    except:
+    except Exception as e:
+        print(f"Error checking membership for {user_id} in @{channel}: {e}")
         return False
 
 def check_all_channels(user_id):
@@ -159,23 +165,22 @@ def webhook():
         data = query["data"]
 
         if data == "joined":
-    not_joined = check_all_channels(uid)
-    if not_joined:
-        buttons = [[{"text": f"عضویت در @{ch}", "url": f"https://t.me/{ch}"}] for ch in not_joined]
-        buttons.append([{"text": "عضو شدم ✅", "callback_data": "joined"}])
-        send("editMessageText", {
-            "chat_id": cid,
-            "message_id": mid,
-            "text": "هنوز عضو همه کانال‌ها نشدی. لطفاً ادامه بده:",
-            "reply_markup": {"inline_keyboard": buttons}
-        })
-    else:
-        send("editMessageText", {
-            "chat_id": cid,
-            "message_id": mid,
-            "text": "عالیه! الان دوباره روی لینک ارسال شده کلیک کن تا فایل رو بگیری."
-        })
-            # (اینجا بدون تغییر می‌مونه)
+            not_joined = check_all_channels(uid)
+            if not_joined:
+                buttons = [[{"text": f"عضویت در @{ch}", "url": f"https://t.me/{ch}"}] for ch in not_joined]
+                buttons.append([{"text": "عضو شدم ✅", "callback_data": "joined"}])
+                send("editMessageText", {
+                    "chat_id": cid,
+                    "message_id": mid,
+                    "text": "هنوز عضو همه کانال‌ها نشدی. لطفاً ادامه بده:",
+                    "reply_markup": {"inline_keyboard": buttons}
+                })
+            else:
+                send("editMessageText", {
+                    "chat_id": cid,
+                    "message_id": mid,
+                    "text": "عالیه! الان دوباره روی لینک ارسال شده کلیک کن تا فایل رو بگیری."
+                })
 
         elif data == "continue_upload":
             if users.get(uid, {}).get("step") == "awaiting_multiple_videos" and users[uid]["files"]:
@@ -226,31 +231,6 @@ def webhook():
             remove_force_channel(text.strip())
             users.pop(uid)
             send("sendMessage", {"chat_id": cid, "text": "کانال با موفقیت حذف شد ✅"})
-
-    if "callback_query" in update:
-        query = update["callback_query"]
-        uid = query["from"]["id"]
-        cid = query["message"]["chat"]["id"]
-        mid = query["message"]["message_id"]
-        data = query["data"]
-
-        if data == "joined":
-            not_joined = check_all_channels(uid)
-            if not_joined:
-                buttons = [[{"text": f"عضویت در @{ch}", "url": f"https://t.me/{ch}"}] for ch in not_joined]
-                buttons.append([{"text": "عضو شدم ✅", "callback_data": "joined"}])
-                send("editMessageText", {
-                    "chat_id": cid,
-                    "message_id": mid,
-                    "text": "هنوز عضو همه کانال‌ها نشدی. لطفاً ادامه بده:",
-                    "reply_markup": {"inline_keyboard": buttons}
-                })
-            else:
-                send("editMessageText", {
-                    "chat_id": cid,
-                    "message_id": mid,
-                    "text": "عالیه! الان دوباره روی لینک ارسال شده کلیک کن تا فایل رو بگیری."
-                })
 
     return "ok"
 
