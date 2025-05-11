@@ -101,11 +101,39 @@ def webhook():
                 "keyboard": [
                     [{"text": "🔞سوپر"}],
                     [{"text": "🖼پست"}],
-                    [{"text": "➕افزودن کانال عضویت"}, {"text": "➖حذف کانال عضویت"}]
+                    [{"text": "تنظیمات"}]
                 ],
                 "resize_keyboard": True
             }
             send("sendMessage", {"chat_id": cid, "text": "سلام آقا مدیر 🔱", "reply_markup": kb})
+
+        elif text == "تنظیمات" and uid in ADMIN_IDS:
+            kb = {
+                "keyboard": [
+                    [{"text": "➕افزودن کانال عضویت"}, {"text": "➖حذف کانال عضویت"}],
+                    [{"text": "مشاهده عضویت اجباری ها"}, {"text": "بازگشت به منو اصلی"}]
+                ],
+                "resize_keyboard": True
+            }
+            send("sendMessage", {"chat_id": cid, "text": "تنظیمات را انتخاب کنید:", "reply_markup": kb})
+
+        elif text == "مشاهده عضویت اجباری ها" and uid in ADMIN_IDS:
+            channels = get_force_channels()
+            if channels:
+                send("sendMessage", {"chat_id": cid, "text": "کانال‌های عضویت اجباری:\n" + "\n".join([f"@{ch}" for ch in channels])})
+            else:
+                send("sendMessage", {"chat_id": cid, "text": "هیچ کانال عضویت اجباری وجود ندارد."})
+
+        elif text == "بازگشت به منو اصلی" and uid in ADMIN_IDS:
+            kb = {
+                "keyboard": [
+                    [{"text": "🔞سوپر"}],
+                    [{"text": "🖼پست"}],
+                    [{"text": "تنظیمات"}]
+                ],
+                "resize_keyboard": True
+            }
+            send("sendMessage", {"chat_id": cid, "text": "بازگشت به منو اصلی", "reply_markup": kb})
 
         elif text == "🔞سوپر" and uid in ADMIN_IDS:
             users[uid] = {"step": "awaiting_multiple_videos", "files": []}
@@ -151,7 +179,7 @@ def webhook():
                     "keyboard": [
                         [{"text": "🔞سوپر"}],
                         [{"text": "🖼پست"}],
-                        [{"text": "➕افزودن کانال عضویت"}, {"text": "➖حذف کانال عضویت"}]
+                        [{"text": "تنظیمات"}]
                     ],
                     "resize_keyboard": True
                 }
@@ -196,41 +224,6 @@ def webhook():
                     "message_id": mid,
                     "text": "هیچ ویدیویی ثبت نشده. اول چند تا بفرست 😅"
                 })
-
-        elif state.get("step") == "awaiting_forward" and ("video" in msg or "photo" in msg):
-            users[uid]["step"] = "awaiting_post_caption"
-            users[uid]["post_msg"] = msg
-            send("sendMessage", {"chat_id": cid, "text": "یه کپشن خوشکل بزن حال کنم 😁"})
-
-        elif state.get("step") == "awaiting_post_caption":
-            post_msg = users[uid]["post_msg"]
-            caption = text + "\n\n" + CHANNEL_TAG
-            if "video" in post_msg:
-                fid = post_msg["video"]["file_id"]
-                send("sendVideo", {"chat_id": cid, "video": fid, "caption": caption})
-            else:
-                fid = post_msg["photo"][-1]["file_id"]
-                send("sendPhoto", {"chat_id": cid, "photo": fid, "caption": caption})
-            users[uid]["step"] = "awaiting_forward"
-            send("sendMessage", {"chat_id": cid, "text": "بفرما اینم درخواستت ✅️ آماده ام پست بعدی رو بفرستی ارباب🔥"})
-
-        elif text == "➕افزودن کانال عضویت" and uid in ADMIN_IDS:
-            users[uid] = {"step": "awaiting_add_channel"}
-            send("sendMessage", {"chat_id": cid, "text": "یوزرنیم کانال بدون @ بفرست (مثلاً hottof)"})
-
-        elif state.get("step") == "awaiting_add_channel":
-            add_force_channel(text.strip())
-            users.pop(uid)
-            send("sendMessage", {"chat_id": cid, "text": "کانال با موفقیت اضافه شد ✅"})
-
-        elif text == "➖حذف کانال عضویت" and uid in ADMIN_IDS:
-            users[uid] = {"step": "awaiting_remove_channel"}
-            send("sendMessage", {"chat_id": cid, "text": "یوزرنیم کانال برای حذف بفرست (بدون @)"})
-
-        elif state.get("step") == "awaiting_remove_channel":
-            remove_force_channel(text.strip())
-            users.pop(uid)
-            send("sendMessage", {"chat_id": cid, "text": "کانال با موفقیت حذف شد ✅"})
 
     return "ok"
 
