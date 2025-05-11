@@ -102,30 +102,35 @@ def webhook():
             send("sendMessage", {"chat_id": cid, "text": "سلام آقا مدیر 🔱", "reply_markup": kb})
 
         elif text == "🔞سوپر" and uid in ADMIN_IDS:
-            users[uid] = {"step": "awaiting_video"}
-            send("sendMessage", {"chat_id": cid, "text": "ای جان یه سوپر ناب برام بفرست 🍌"})
+            users[uid] = {"step": "awaiting_multiple_videos", "files": []}
+            send("sendMessage", {"chat_id": cid, "text": "چندتا سوپر برام بفرست 🍌 بعدش روی دکمه ادامه بزن", 
+                                 "reply_markup": {
+                                     "inline_keyboard": [[{"text": "✅ ادامه", "callback_data": "continue_upload"}]]
+                                 }})
 
-        elif text == "🖼پست" and uid in ADMIN_IDS:
-            users[uid] = {"step": "awaiting_forward"}
-            send("sendMessage", {"chat_id": cid, "text": "محتوا رو برا فوروارد کن یادت نره تگ بزنی روش ✅️"})
-
-        elif state.get("step") == "awaiting_video" and "video" in msg:
-            users[uid]["step"] = "awaiting_caption"
-            users[uid]["file_id"] = msg["video"]["file_id"]
-            send("sendMessage", {"chat_id": cid, "text": "منتظر کپشن خوشکلت هستم 💫"})
+        elif state.get("step") == "awaiting_multiple_videos" and "video" in msg:
+            users[uid]["files"].append(msg["video"]["file_id"])
+            send("sendMessage", {
+                "chat_id": cid,
+                "text": "گرفتم 😏 اگه ویدیوی دیگه‌ای داری بفرست، اگه نه روی «ادامه» بزن",
+                "reply_markup": {
+                    "inline_keyboard": [[{"text": "✅ ادامه", "callback_data": "continue_upload"}]]
+                }
+            })
 
         elif state.get("step") == "awaiting_caption":
-            users[uid]["step"] = "awaiting_cover"
             users[uid]["caption"] = text
-            send("sendMessage", {"chat_id": cid, "text": "یه عکس برای پیش نمایش بهم بده 📸"})
+            users[uid]["step"] = "awaiting_cover"
+            send("sendMessage", {"chat_id": cid, "text": "یه عکس برای پیش نمایش بده 📸"})
 
         elif state.get("step") == "awaiting_cover" and "photo" in msg:
-            file_id = users[uid]["file_id"]
             caption = users[uid]["caption"]
             cover_id = msg["photo"][-1]["file_id"]
-            code = gen_code()
-            save_file(file_id, code)
-            text_out = f"<a href='https://t.me/Simhotbot?start={code}'>مشاهده</a>\n\n{CHANNEL_TAG}"
+            text_out = CHANNEL_TAG
+            for file_id in users[uid]["files"]:
+                code = gen_code()
+                save_file(file_id, code)
+                text_out += f"\n<a href='https://t.me/Simhotbot?start={code}'>🎥 مشاهده</a>"
             send("sendPhoto", {
                 "chat_id": cid,
                 "photo": cover_id,
@@ -135,7 +140,7 @@ def webhook():
             users.pop(uid)
             send("sendMessage", {
                 "chat_id": cid,
-                "text": "درخواست شما تایید شد✅️",
+                "text": "همه چی آماده شد ✅",
                 "reply_markup": {
                     "keyboard": [
                         [{"text": "🔞سوپر"}],
@@ -145,6 +150,31 @@ def webhook():
                     "resize_keyboard": True
                 }
             })
+
+    if "callback_query" in update:
+        query = update["callback_query"]
+        uid = query["from"]["id"]
+        cid = query["message"]["chat"]["id"]
+        mid = query["message"]["message_id"]
+        data = query["data"]
+
+        if data == "joined":
+            # (اینجا بدون تغییر می‌مونه)
+
+        elif data == "continue_upload":
+            if users.get(uid, {}).get("step") == "awaiting_multiple_videos" and users[uid]["files"]:
+                users[uid]["step"] = "awaiting_caption"
+                send("editMessageText", {
+                    "chat_id": cid,
+                    "message_id": mid,
+                    "text": "همه ویدیوها ثبت شدن ✅ حالا یه کپشن خوشگل بفرست"
+                })
+            else:
+                send("editMessageText", {
+                    "chat_id": cid,
+                    "message_id": mid,
+                    "text": "هیچ ویدیویی ثبت نشده. اول چند تا بفرست 😅"
+                })
 
         elif state.get("step") == "awaiting_forward" and ("video" in msg or "photo" in msg):
             users[uid]["step"] = "awaiting_post_caption"
