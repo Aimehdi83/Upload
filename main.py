@@ -159,6 +159,22 @@ def webhook():
         data = query["data"]
 
         if data == "joined":
+    not_joined = check_all_channels(uid)
+    if not_joined:
+        buttons = [[{"text": f"عضویت در @{ch}", "url": f"https://t.me/{ch}"}] for ch in not_joined]
+        buttons.append([{"text": "عضو شدم ✅", "callback_data": "joined"}])
+        send("editMessageText", {
+            "chat_id": cid,
+            "message_id": mid,
+            "text": "هنوز عضو همه کانال‌ها نشدی. لطفاً ادامه بده:",
+            "reply_markup": {"inline_keyboard": buttons}
+        })
+    else:
+        send("editMessageText", {
+            "chat_id": cid,
+            "message_id": mid,
+            "text": "عالیه! الان دوباره روی لینک ارسال شده کلیک کن تا فایل رو بگیری."
+        })
             # (اینجا بدون تغییر می‌مونه)
 
         elif data == "continue_upload":
