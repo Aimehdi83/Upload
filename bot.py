@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-TOKEN = 'توکن_ربات_تو_اینجا_بزار'
+TOKEN = '7009887131:AAEQE2NiromIjaD8ulRt99nRQt7DAFp-VQE'
 
 # فایل‌های داده و مدل
 DATA_FILE = 'data.csv'
