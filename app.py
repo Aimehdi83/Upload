@@ -25,6 +25,7 @@ application = Application.builder().token(TOKEN).build()
 application.add_handler(CommandHandler("start", start_handler))
 application.add_handler(CommandHandler("panel", panel_handler))
 application.add_handler(CallbackQueryHandler(membership_callback_handler))
+application.add_handler(MessageHandler(filters.TEXT & filters.User(ADMINS), membership_text_handler))
 
 # دریافت پیام وبهوک از تلگرام و انتقال به بات
 @app.post(WEBHOOK_PATH)
