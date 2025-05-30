@@ -134,7 +134,7 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_t
 def home():
     return "Bot is live!"
 
-@app.route(f"/{TOKEN}", methods=["POST"])
+@app.route(f"/webhook/{TOKEN}", methods=["POST"])
 def webhook():
     try:
         update = Update.de_json(request.get_json(force=True), application.bot)
