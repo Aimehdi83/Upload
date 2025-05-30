@@ -25,7 +25,6 @@ def generate_tag_image(size=(300, 90)):
     tag.save_frame(temp.name, t=0)
     return temp.name
 
-# === Video Effects ===
 def get_tag_size(size_label):
     return {
         "کوچیک": (200, 60),
@@ -135,6 +134,12 @@ async def process_moving_tag(update: Update, context: ContextTypes.DEFAULT_TYPE,
     os.remove(temp_out)
     user_state.pop(user_id, None)
 
+# === حالا درست و اصولی بعد از تعریف application، روت ها رو وصل می‌کنیم
+application = Application.builder().token(TOKEN).build()
+application.add_handler(CommandHandler("start", start))
+application.add_handler(MessageHandler(filters.VIDEO, handle_video))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
 @app.route(f"/{TOKEN}", methods=["POST"])
 def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
@@ -145,10 +150,9 @@ def webhook():
 def index():
     return "Bot is running."
 
-application = Application.builder().token(TOKEN).build()
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(filters.VIDEO, handle_video))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-
 if __name__ == "__main__":
-    application.run_webhook(listen="0.0.0.0", port=int(os.environ.get("PORT", 5000)), webhook_url=f"{BASE_URL}/{TOKEN}")
+    application.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        webhook_url=f"{BASE_URL}/{TOKEN}"
+)
