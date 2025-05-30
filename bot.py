@@ -8,7 +8,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, ContextTyp
 from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip, TextClip
 
 TOKEN = "7009887131:AAGEEW5TmkIAW77EuUnnZ1mxpksS_pKGGj4"
-BASE_URL = "https://upload-2-fv80.onrender.com"  # آدرس رندر خودت
+BASE_URL = "https://upload-2-fv80.onrender.com"  # آدرس رندر
 
 app = Flask(__name__)
 user_state = {}
@@ -125,7 +125,7 @@ async def process_moving(update, context, state):
     user_state.pop(uid, None)
 
 # === Bot Application ===
-application = Application.builder().token(TOKEN).build()
+application = Application.builder().token(TOKEN).webhook_url(f"{BASE_URL}/webhook/{TOKEN}").build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.VIDEO, handle_video))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
@@ -144,5 +144,4 @@ def webhook():
     return "ok"
 
 if __name__ == "__main__":
-    # اجرای Flask برای Render
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
