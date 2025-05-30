@@ -6,8 +6,8 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, ContextTypes, CommandHandler, MessageHandler, filters
 from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip, TextClip
 
-TOKEN = "YOUR_BOT_TOKEN"
-BASE_URL = "https://your-render-domain.onrender.com"
+TOKEN = "7009887131:AAHdcXnMmGZeJpn9d4RDklt2RdpIg49i2uU"
+BASE_URL = "https://upload-2-fv80.onrender.com"
 
 app = Flask(__name__)
 user_state = {}
