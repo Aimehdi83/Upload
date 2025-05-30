@@ -7,7 +7,7 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip, TextClip
 
-TOKEN = "توکن خودت"
+TOKEN = "7009887131:AAGEEW5TmkIAW77EuUnnZ1mxpksS_pKGGj4"
 BASE_URL = "https://upload-2-fv80.onrender.com"
 
 app = Flask(__name__)
